@@ -104,4 +104,183 @@ redux，vuex都属于中介者模式的实际应⽤，我们把共享的数据�
 
 ## 装饰器模式 
 
-装饰者模式的定义:在不不改变对象⾃自身的基础上，在程序运⾏行行期间给对象动态地添加⽅方法。常⻅见应⽤用， react的⾼高阶组件, 或者react-redux中的@connect 或者⾃自⼰己定义⼀一些⾼高阶组件 
+> 装饰者模式的定义:在不改变对象⾃身的基础上，在程序运行期间给对象动态地添加⽅法。常⻅应用， react的⾼阶组件, 或者react-redux中的@connect 或者自己定义⼀些⾼阶组件 
+
+装饰者模式和代理模式的结构看起来⾮常相像，这两种模式都描述了怎样为对象提供一定程度上的间接引用，它们的实现部分都保留了对另外⼀个对象的引⽤，并且向那个对象发送请求。 代理模式和装饰者模式最重要的区别在于它们的意图和设计⽬的。代理模式的目的是，当直接访问本体不⽅便或者不符合需要时，为这个本体提供⼀个替代者。本体定义了关键功能，⽽代理提供或拒绝对它的访问，或者在访问本体之前做⼀些额外的事情。装饰者模式的作用就是为对象动态加入⾏为。 
+
+其实Vue中的v-input，v-checkbox也可以认为是装饰器模式， 对原生的input和checkbox做一层装饰 
+
+## 外观模式 
+
+> 外观模式即让多个方法一起被调⽤涉及到兼容性，参数⽀持多格式，有很多这种代码，对外暴露统一的api
+
+⽐如上面的$on 支持数组， ¥off参数支持多个情况， 对面只⽤⼀个函数，内部判断实现
+
+⾃⼰封装组件库经常看到 
+
+```js
+
+myEvent = {
+  stop: function(e) {
+    if (typeof e.preventDefault() === "function") {
+      e.preventDefault();
+    }
+    if (typeof e.stopPropagation() === "function") {
+      e.stopPropagation();
+    }
+    //for IE
+    if (typeof e.returnValue === "boolean") {
+      e.returnValue = false;
+    }
+    if (typeof e.cancelBubble === "boolean") {
+      e.cancelBubble = true;
+    }
+  }
+  addEvent(dom, type, fn) {
+    if (dom.addEventListener) {
+      dom.addEventListener(type, fn, false);
+    } else if (dom.attachEvent) {
+      dom.attachEvent('on' + type, fn);
+    } else {
+      dom['on' + type] = fn;
+    } }
+}
+```
+
+## ⼯⼚模式 
+
+提供创建对象的接⼝，把成员对象的创建⼯作转交给⼀个外部对象，好处在于消除对象之间的耦合(也就是相互影响) 
+
+常见的例⼦，ElementUI的弹框组件message，对外提供的api，都是调用api，然后新建⼀个弹窗或者Message 的实例，就是典型的⼯⼚模式 
+
+```js
+const Notification = function(options) {
+  if (Vue.prototype.$isServer) return;
+  options = options || {};
+  const userOnClose = options.onClose;
+  const id = 'notification_' + seed++;
+  const position = options.position || 'top-right';
+  options.onClose = function() {
+    Notification.close(id, userOnClose);
+  };
+  instance = new NotificationConstructor({
+    data: options
+  });
+  if (isVNode(options.message)) {
+    instance.$slots.default = [options.message];
+    options.message = 'REPLACED_BY_VNODE';
+  }
+  instance.id = id;
+  instance.$mount();
+  document.body.appendChild(instance.$el);
+  instance.visible = true;
+  instance.dom = instance.$el;
+  instance.dom.style.zIndex = PopupManager.nextZIndex();
+  let verticalOffset = options.offset || 0;
+  instances.filter(item => item.position === position).forEach(item => {
+    verticalOffset += item.$el.offsetHeight + 16;
+  });
+  verticalOffset += 16;
+  instance.verticalOffset = verticalOffset;
+  instances.push(instance);
+  return instance;
+};
+```
+
+https://github.com/ElemeFE/element/blob/dev/packages/notification/src/main.js#L11 
+
+## 建造者模式 
+
+和工厂模式相⽐，参与了更多创建的过程 或者更复杂 
+
+例如：
+
+```js
+
+var Person = function(name, work) { // 创建应聘者缓存对象
+  var _person = new Human();
+  // 创建应聘者姓名解析对象 _person.name = new Named(name);
+  // 创建应聘者期望职位 _person.work = new Work(work);
+  return _person;
+};
+var person = new Person('xiao ming', 'code');
+console.log(person)
+```
+
+## 迭代器模式
+
+> 迭代器模式是指提供⼀种方法顺序访问⼀个聚合对象中的各个元素，⽽⼜不需要暴露该对象的内部表示。迭代器器模式可以把迭代的过程从业务逻辑中分离出来，在使用迭代器模式之后，即使不关⼼对象的内部构造，也可以按顺序访问其中的每个元素 
+
+这个⽤就太多了， 好多遍历的方法都是这种原理，比如：each 、map 
+
+```js
+var each = function( ary, callback ){
+  for ( var i = 0, l = ary.length; i < l; i++ ){
+    callback.call( ary[i], i, ary[ i ] );
+  }
+};
+each( [ 1, 2, 3 ], function( i, n ){
+  alert ( [ i, n ] );
+})
+```
+
+## 享元模式 
+
+> 享元(flyweight)模式是⼀种⽤用于性能优化的模式，“fly”在这⾥是苍蝇的意思，意为蝇量级。享元模式的核⼼是运用共享技术来有效⽀持⼤量细粒度的对象。 如果系统中因为创建了⼤量类似的对象⽽而导致内存占⽤过⾼，享元模式就非常有⽤了。在 JavaScript 中，浏览器特别是移动端的浏览器分配的内存并不算多，如何节省内存就成了了⼀件⾮非常有意义的事情。 
+
+* 内部状态存储于对象内部
+* 内部状态可以被⼀些对象共享
+* 内部状态独⽴于具体的场景，通常不会改变
+* 外部状态取决于具体的场景，并根据场景⽽而变化，外部状态不能被共享
+
+## 职责链模式 
+
+> 职责链模式的定义是:使多个对象都有机会处理请求，从⽽避免请求的发送者和接收者之间的耦合关系， 将这些对象连成一条链，并沿着这条链传递该请求，直到有一个对象处理它为⽌。 职责链模式的名字⾮常形象，⼀系列列可能会处理请求的对象被连接成一条链，请求在这些对象之间依次传递，直到遇到⼀个可以处理它的对象，我们把这些对象称为链中的节点 
+
+## 适配器模式 
+
+> 适配器模式的作⽤是解决两个软件实体间的接⼝不兼容的问题。使⽤用适配器模式之后，原本由于接⼝不兼容⽽而不能⼯作的两个软件实体可以⼀起工作。 适配器的别名是包装器(wrapper)，这是⼀个相对简单的模式。
+
+在程序开发中有许多这样的场景
+
+​	当我们试图调用模块或者对象的某个接⼝时，却发现这个接⼝的格式并不符合目前的需求。 这时候有两种解决办法，第⼀种是修改原来的接⼝实现，但如果原来的模块很复杂，或者我们拿到的模块是一段别⼈人编写的经过压缩的代码，修改原接⼝就显得不太现实了。第⼆种办法是创建⼀个适配器，将原接⼝转换为客户希望的另⼀个接⼝，客户只需要和适配器打交道 
+
+```js
+
+var googleMap = {
+  show: function(){
+    console.log( '开始渲染⾕谷歌地图' ); }
+};
+var baiduMap = {
+  display: function(){
+    console.log( '开始渲染百度地图' );
+  } };
+var baiduMapAdapter = {
+  show: function(){
+    return baiduMap.display();
+  }
+};
+renderMap( googleMap ); // 输出:开始渲染⾕谷歌地图 
+renderMap( baiduMapAdapter ); // 输出:开始渲染百度地图
+```
+
+适配器器模式主要⽤来解决两个已有接⼝之间不匹配的问题，它不考虑这些接⼝是怎样实现的，也不考虑它们将来可能会如何演化。适配器器模式不需要改变已有的接⼝，就能够使它们协同作⽤。 
+
+装饰者模式和代理理模式也不会改变原有对象的接⼝，但装饰者模式的作⽤是为了给对象增加功能。装饰者模式常常形成一条⻓长的装饰链，⽽适配器器模式通常只包装⼀次。代理模式是为了控制对对象的访问， 通常也只包装一次。 
+
+我们设计很多插件，有默认值，也算是适配器器的⼀种应⽤， vue的prop校验，default也算是适配器的应⽤了 
+
+外观模式的作用倒是和适配器⽐较相似，有⼈把外观模式看成⼀组对象的适配器，但外观模式最显著的特点是定义了⼀个新的接⼝。
+
+## 模板方法模式 
+
+>模板方法模式在一个⽅法中定义一个算法的骨架，而将⼀些步骤的实现延迟到子类中。模板⽅法使得子类可以在不改变算法结构的情况下，重新定义算法中某些步骤的具体实现
+
+这个我们用的很多，vue中的slot，react中的children
+
+## 备忘录模式 
+
+可以恢复到对象之前的某个状态，其实⼤家学习react或者redux的时候，时间旅行的功能，就算是备忘录模式的一个应⽤ 
+
+https://zh-hans.reactjs.org/tutorial/tutorial.html#implementing-time-travel 
+
